@@ -19,15 +19,17 @@ const difficultyConfig = {
   hard: { label: "Хард", color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
 };
 
-const DareCard = ({ title, description, category, difficulty, reward, timeLeft, author }: DareCardProps) => {
+const DareCard = ({ id, title, description, category, difficulty, reward, timeLeft, author }: DareCardProps) => {
   const diff = difficultyConfig[difficulty];
+  const navigate = useNavigate();
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileTap={{ scale: 0.98 }}
-      className="gradient-card rounded-xl border border-border p-4 shadow-card"
+      onClick={() => navigate(`/dare/${id || 1}`)}
+      className="gradient-card cursor-pointer rounded-xl border border-border p-4 shadow-card"
     >
       <div className="mb-3 flex items-center justify-between">
         <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
