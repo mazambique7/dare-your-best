@@ -11,6 +11,7 @@ import StreakPage from "./pages/StreakPage";
 import CreateDarePage from "./pages/CreateDarePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import DareDetailPage from "./pages/DareDetailPage";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/profile" element={<OnboardingGuard><ProfilePage /></OnboardingGuard>} />
               <Route path="/streak" element={<OnboardingGuard><StreakPage /></OnboardingGuard>} />
               <Route path="/create" element={<OnboardingGuard><CreateDarePage /></OnboardingGuard>} />
+              <Route path="/dare/:id" element={<OnboardingGuard><DareDetailPage /></OnboardingGuard>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>

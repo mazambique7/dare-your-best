@@ -4,11 +4,11 @@ import DailyDare from "@/components/DailyDare";
 import DareCard from "@/components/DareCard";
 
 const mockDares = [
-  { title: "Заговори с незнакомцем", description: "Подойди к случайному человеку в кафе и задай необычный вопрос. Сними реакцию!", category: "Социальное", difficulty: "easy" as const, reward: 100, timeLeft: "23ч", author: "daredevil" },
-  { title: "Ледяной душ 3 минуты", description: "Запиши полное видео ледяного душа. Без пауз и монтажа.", category: "Физическое", difficulty: "medium" as const, reward: 200, timeLeft: "47ч", author: "iceman" },
-  { title: "Открытый микрофон", description: "Выступи со стендапом на открытом микрофоне в любом баре города.", category: "Социальное", difficulty: "hard" as const, reward: 300, timeLeft: "71ч", author: "comedian" },
-  { title: "Пробежка 5км", description: "Пробеги 5 километров и запиши GPS-трек + видео финиша.", category: "Спорт", difficulty: "easy" as const, reward: 100, timeLeft: "23ч" },
-  { title: "Готовь новое блюдо", description: "Приготовь блюдо кухни, которую никогда не пробовал. Покажи процесс!", category: "Творчество", difficulty: "medium" as const, reward: 200, timeLeft: "47ч", author: "chef_mode" },
+  { id: 1, title: "Заговори с незнакомцем", description: "Подойди к случайному человеку в кафе и задай необычный вопрос. Сними реакцию!", category: "Социальное", difficulty: "easy" as const, reward: 100, timeLeft: "23ч", author: "daredevil" },
+  { id: 2, title: "Ледяной душ 3 минуты", description: "Запиши полное видео ледяного душа. Без пауз и монтажа.", category: "Физическое", difficulty: "medium" as const, reward: 200, timeLeft: "47ч", author: "iceman" },
+  { id: 3, title: "Открытый микрофон", description: "Выступи со стендапом на открытом микрофоне в любом баре города.", category: "Социальное", difficulty: "hard" as const, reward: 300, timeLeft: "71ч", author: "comedian" },
+  { id: 4, title: "Пробежка 5км", description: "Пробеги 5 километров и запиши GPS-трек + видео финиша.", category: "Спорт", difficulty: "easy" as const, reward: 100, timeLeft: "23ч" },
+  { id: 5, title: "Готовь новое блюдо", description: "Приготовь блюдо кухни, которую никогда не пробовал. Покажи процесс!", category: "Творчество", difficulty: "medium" as const, reward: 200, timeLeft: "47ч", author: "chef_mode" },
 ];
 
 const FeedPage = () => {
