@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Flame, Clock, Zap, Shield, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface DareCardProps {
   title: string;
