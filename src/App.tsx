@@ -11,6 +11,7 @@ import StreakPage from "./pages/StreakPage";
 import CreateDarePage from "./pages/CreateDarePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import DareDetailPage from "./pages/DareDetailPage";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 
