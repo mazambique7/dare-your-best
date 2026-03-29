@@ -53,6 +53,7 @@ const App = () => (
               <Route path="/profile" element={<OnboardingGuard><ProfilePage /></OnboardingGuard>} />
               <Route path="/streak" element={<OnboardingGuard><StreakPage /></OnboardingGuard>} />
               <Route path="/create" element={<OnboardingGuard><CreateDarePage /></OnboardingGuard>} />
+              <Route path="/dare/:id" element={<OnboardingGuard><DareDetailPage /></OnboardingGuard>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>
