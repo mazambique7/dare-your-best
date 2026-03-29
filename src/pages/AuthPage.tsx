@@ -1,12 +1,52 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Eye, EyeOff } from "lucide-react";
+import { Flame, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, register } = useAuth();
+
+  // Form state
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [refCode, setRefCode] = useState("");
+
+  const handleSubmit = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      if (isLogin) {
+        await login(username, password);
+      } else {
+        await register({
+          username,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          city,
+          ref_code: refCode || undefined,
+        });
+      }
+      navigate("/");
+    } catch (err: any) {
+      toast.error(err.message || "Ошибка. Попробуйте снова.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputClass = "w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4" style={{ background: "linear-gradient(180deg, hsl(240 10% 8%), hsl(240 10% 4%))" }}>
@@ -46,48 +86,29 @@ const AuthPage = () => {
           {!isLogin && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Имя"
-                  className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Фамилия"
-                  className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
+                <input type="text" placeholder="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputClass} />
+                <input type="text" placeholder="Фамилия" value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputClass} />
               </div>
-              <input
-                type="text"
-                placeholder="Username"
-                className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-              />
-              <input
-                type="tel"
-                placeholder="Телефон"
-                className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Город"
-                className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-              />
+              <input type="tel" placeholder="Телефон" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+              <input type="text" placeholder="Город" value={city} onChange={(e) => setCity(e.target.value)} className={inputClass} />
             </>
           )}
 
-          {isLogin && (
-            <input
-              type="text"
-              placeholder="Username или телефон"
-              className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            />
-          )}
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className={inputClass}
+          />
 
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Пароль"
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${inputClass} pr-12`}
             />
             <button
               type="button"
@@ -102,15 +123,19 @@ const AuthPage = () => {
             <input
               type="text"
               placeholder="Реферальный код (необязательно)"
-              className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              value={refCode}
+              onChange={(e) => setRefCode(e.target.value)}
+              className={inputClass}
             />
           )}
 
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/")}
-            className="mt-2 gradient-fire w-full rounded-xl py-3.5 font-display text-lg tracking-wider text-primary-foreground shadow-glow transition-transform hover:scale-[1.02]"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="mt-2 gradient-fire w-full rounded-xl py-3.5 font-display text-lg tracking-wider text-primary-foreground shadow-glow transition-transform hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
           >
+            {loading && <Loader2 className="h-5 w-5 animate-spin" />}
             {isLogin ? "ВОЙТИ" : "СОЗДАТЬ АККАУНТ"}
           </motion.button>
         </div>
