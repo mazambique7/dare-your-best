@@ -1,38 +1,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft, ThumbsUp, ThumbsDown, Clock, Zap, Shield, Flame,
-  Play, Pause, Share2, Flag, MessageCircle, Send, User, MoreVertical
+  ArrowLeft, ThumbsUp, ThumbsDown, Zap, Shield,
+  Play, Share2, MessageCircle, Send, MoreVertical, Loader2
 } from "lucide-react";
-
-// Mock data — will be replaced with API calls
-const mockDare = {
-  id: 1,
-  title: "Заговори с незнакомцем",
-  description: "Подойди к случайному человеку в кафе и задай необычный вопрос. Сними реакцию! Видео должно быть не менее 30 секунд. Лицо собеседника можно заблюрить.",
-  category: "Социальное",
-  difficulty: "easy" as const,
-  reward: 100,
-  author: { username: "daredevil", points: 4200, streak: 23 },
-  createdAt: "2 часа назад",
-  submission: {
-    id: 1,
-    mediaUrl: "",
-    status: "pending" as const,
-    votesYes: 7,
-    votesNo: 2,
-    createdAt: "45 мин назад",
-    user: { username: "brave_one", avatar: "" },
-  },
-};
-
-const mockComments = [
-  { id: 1, user: "iceman", text: "Огонь! Реакция незнакомца — бесценно 😂", time: "30 мин назад", likes: 5 },
-  { id: 2, user: "chef_mode", text: "Я бы так не смог, респект!", time: "20 мин назад", likes: 3 },
-  { id: 3, user: "runner_x", text: "Засчитано однозначно 🔥", time: "10 мин назад", likes: 8 },
-  { id: 4, user: "comedian", text: "В следующий раз попробуй в метро, вообще хардкор будет", time: "5 мин назад", likes: 1 },
-];
+import api from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const difficultyConfig = {
   easy: { label: "Лёгкий", color: "text-success", bg: "bg-success/10" },
@@ -43,34 +18,99 @@ const difficultyConfig = {
 const DareDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [isPlaying, setIsPlaying] = useState(false);
+  const dareId = Number(id);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const [userVote, setUserVote] = useState<"yes" | "no" | null>(null);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState(mockComments);
   const [showAllComments, setShowAllComments] = useState(false);
 
-  const dare = mockDare;
-  const diff = difficultyConfig[dare.difficulty];
-  const sub = dare.submission;
-  const totalVotes = sub.votesYes + sub.votesNo;
-  const yesPercent = totalVotes > 0 ? Math.round((sub.votesYes / totalVotes) * 100) : 50;
+  // ─── Queries ───────────────────────────────────
+  const { data: dare, isLoading: dareLoading, error: dareError } = useQuery({
+    queryKey: ["dare", dareId],
+    queryFn: () => api.getDare(dareId),
+    enabled: !!dareId,
+  });
+
+  const { data: submissions = [] } = useQuery({
+    queryKey: ["submissions", dareId],
+    queryFn: () => api.getSubmissions(dareId),
+    enabled: !!dareId,
+  });
+
+  const sub = submissions[0]; // Show first submission
+
+  const { data: comments = [], refetch: refetchComments } = useQuery({
+    queryKey: ["comments", sub?.id],
+    queryFn: () => api.getComments(sub.id),
+    enabled: !!sub?.id,
+  });
+
+  // ─── Mutations ─────────────────────────────────
+  const voteMutation = useMutation({
+    mutationFn: ({ submissionId, type }: { submissionId: number; type: "yes" | "no" }) =>
+      api.vote(submissionId, type),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions", dareId] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Ошибка голосования", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: ({ submissionId, text }: { submissionId: number; text: string }) =>
+      api.addComment(submissionId, text),
+    onSuccess: () => {
+      setCommentText("");
+      refetchComments();
+    },
+    onError: (err: Error) => {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    },
+  });
 
   const handleVote = (type: "yes" | "no") => {
+    if (!sub) return;
     if (userVote === type) {
       setUserVote(null);
-    } else {
-      setUserVote(type);
+      return;
     }
+    setUserVote(type);
+    voteMutation.mutate({ submissionId: sub.id, type });
   };
 
   const handleComment = () => {
-    if (!commentText.trim()) return;
-    setComments([
-      ...comments,
-      { id: Date.now(), user: "you", text: commentText, time: "Только что", likes: 0 },
-    ]);
-    setCommentText("");
+    if (!commentText.trim() || !sub) return;
+    commentMutation.mutate({ submissionId: sub.id, text: commentText });
   };
+
+  // ─── Loading / Error ──────────────────────────
+  if (dareLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (dareError || !dare) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
+        <p className="text-muted-foreground">Не удалось загрузить вызов</p>
+        <button onClick={() => navigate(-1)} className="text-primary hover:underline">
+          ← Назад
+        </button>
+      </div>
+    );
+  }
+
+  const diff = difficultyConfig[dare.difficulty as keyof typeof difficultyConfig] ?? difficultyConfig.easy;
+  const votesYes = sub?.votes_yes ?? sub?.votesYes ?? 0;
+  const votesNo = sub?.votes_no ?? sub?.votesNo ?? 0;
+  const totalVotes = votesYes + votesNo;
+  const yesPercent = totalVotes > 0 ? Math.round((votesYes / totalVotes) * 100) : 50;
 
   const visibleComments = showAllComments ? comments : comments.slice(0, 3);
 
@@ -78,17 +118,27 @@ const DareDetailPage = () => {
     <div className="min-h-screen pb-24">
       {/* Video player area */}
       <div className="relative aspect-[9/12] w-full max-h-[60vh] bg-card overflow-hidden">
-        {/* Placeholder for video */}
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-muted/20 to-card">
-          <div className="text-center">
-            <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-secondary/80 backdrop-blur-sm">
-              <Play className="h-8 w-8 text-foreground ml-1" />
+        {sub?.media_url ? (
+          <video
+            src={sub.media_url}
+            controls
+            className="absolute inset-0 h-full w-full object-cover"
+            playsInline
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-muted/20 to-card">
+            <div className="text-center">
+              <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-secondary/80 backdrop-blur-sm">
+                <Play className="h-8 w-8 text-foreground ml-1" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {sub ? "Видео-доказательство" : "Пока нет доказательств"}
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">Видео-доказательство</p>
           </div>
-        </div>
+        )}
 
-        {/* Top bar overlay */}
+        {/* Top bar */}
         <div className="absolute left-0 right-0 top-0 flex items-center justify-between bg-gradient-to-b from-background/80 to-transparent p-4 pt-6">
           <button
             onClick={() => navigate(-1)}
@@ -106,18 +156,24 @@ const DareDetailPage = () => {
           </div>
         </div>
 
-        {/* Submitter info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/80 to-transparent p-4 pt-12">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-display text-lg text-foreground">
-              {sub.user.username[0].toUpperCase()}
-            </div>
-            <div>
-              <span className="text-sm font-medium text-foreground">@{sub.user.username}</span>
-              <p className="text-xs text-muted-foreground">{sub.createdAt}</p>
+        {/* Submitter info */}
+        {sub && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/80 to-transparent p-4 pt-12">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-display text-lg text-foreground">
+                {(sub.user?.username ?? sub.username ?? "?")[0].toUpperCase()}
+              </div>
+              <div>
+                <span className="text-sm font-medium text-foreground">
+                  @{sub.user?.username ?? sub.username ?? "—"}
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  {sub.created_at ? new Date(sub.created_at).toLocaleDateString("ru-RU") : ""}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Content */}
@@ -132,7 +188,7 @@ const DareDetailPage = () => {
               {diff.label}
             </span>
             <span className="flex items-center gap-1 text-sm font-semibold text-streak">
-              <Zap className="h-3.5 w-3.5" />+{dare.reward}
+              <Zap className="h-3.5 w-3.5" />+{dare.reward ?? difficultyConfig[dare.difficulty as keyof typeof difficultyConfig]?.label === "Хард" ? 300 : dare.difficulty === "medium" ? 200 : 100}
             </span>
           </div>
 
@@ -140,151 +196,174 @@ const DareDetailPage = () => {
           <p className="text-sm leading-relaxed text-muted-foreground">{dare.description}</p>
 
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <span>от @{dare.author.username}</span>
-            <span>·</span>
-            <span>{dare.createdAt}</span>
+            {dare.author?.username && <span>от @{dare.author.username}</span>}
+            {dare.created_at && (
+              <>
+                <span>·</span>
+                <span>{new Date(dare.created_at).toLocaleDateString("ru-RU")}</span>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Voting section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-4 rounded-xl border border-border bg-card p-4"
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <span className="font-display text-sm tracking-wider text-foreground">ГОЛОСОВАНИЕ</span>
-            <span className="text-xs text-muted-foreground">{totalVotes} голосов</span>
-          </div>
+        {/* Voting section — only if submission exists */}
+        {sub && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-4 rounded-xl border border-border bg-card p-4"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-display text-sm tracking-wider text-foreground">ГОЛОСОВАНИЕ</span>
+              <span className="text-xs text-muted-foreground">{totalVotes} голосов</span>
+            </div>
 
-          {/* Vote bar */}
-          <div className="mb-4 h-3 overflow-hidden rounded-full bg-secondary">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${yesPercent}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="h-full rounded-full bg-success"
-            />
-          </div>
+            <div className="mb-4 h-3 overflow-hidden rounded-full bg-secondary">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${yesPercent}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="h-full rounded-full bg-success"
+              />
+            </div>
 
-          <div className="mb-4 flex justify-between text-sm">
-            <span className="flex items-center gap-1 text-success">
-              <ThumbsUp className="h-4 w-4" /> {sub.votesYes} ({yesPercent}%)
-            </span>
-            <span className="flex items-center gap-1 text-destructive">
-              <ThumbsDown className="h-4 w-4" /> {sub.votesNo} ({100 - yesPercent}%)
-            </span>
-          </div>
+            <div className="mb-4 flex justify-between text-sm">
+              <span className="flex items-center gap-1 text-success">
+                <ThumbsUp className="h-4 w-4" /> {votesYes} ({yesPercent}%)
+              </span>
+              <span className="flex items-center gap-1 text-destructive">
+                <ThumbsDown className="h-4 w-4" /> {votesNo} ({100 - yesPercent}%)
+              </span>
+            </div>
 
-          {/* Vote buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleVote("yes")}
-              className={`flex items-center justify-center gap-2 rounded-xl py-3 font-display text-sm tracking-wider transition-all ${
-                userVote === "yes"
-                  ? "bg-success text-primary-foreground shadow-lg"
-                  : "border border-success/30 bg-success/10 text-success hover:bg-success/20"
-              }`}
-            >
-              <ThumbsUp className="h-5 w-5" /> ЗАСЧИТАНО
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleVote("no")}
-              className={`flex items-center justify-center gap-2 rounded-xl py-3 font-display text-sm tracking-wider transition-all ${
-                userVote === "no"
-                  ? "bg-destructive text-primary-foreground shadow-lg"
-                  : "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
-              }`}
-            >
-              <ThumbsDown className="h-5 w-5" /> НЕ СЧИТАЕТСЯ
-            </motion.button>
-          </div>
-        </motion.div>
+            <div className="grid grid-cols-2 gap-3">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleVote("yes")}
+                disabled={voteMutation.isPending}
+                className={`flex items-center justify-center gap-2 rounded-xl py-3 font-display text-sm tracking-wider transition-all ${
+                  userVote === "yes"
+                    ? "bg-success text-primary-foreground shadow-lg"
+                    : "border border-success/30 bg-success/10 text-success hover:bg-success/20"
+                }`}
+              >
+                <ThumbsUp className="h-5 w-5" /> ЗАСЧИТАНО
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleVote("no")}
+                disabled={voteMutation.isPending}
+                className={`flex items-center justify-center gap-2 rounded-xl py-3 font-display text-sm tracking-wider transition-all ${
+                  userVote === "no"
+                    ? "bg-destructive text-primary-foreground shadow-lg"
+                    : "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
+                }`}
+              >
+                <ThumbsDown className="h-5 w-5" /> НЕ СЧИТАЕТСЯ
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Comments section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-4"
-        >
-          <div className="mb-3 flex items-center gap-2">
-            <MessageCircle className="h-4 w-4 text-primary" />
-            <span className="font-display text-sm tracking-wider text-foreground">
-              КОММЕНТАРИИ ({comments.length})
-            </span>
-          </div>
-
-          {/* Comment input */}
-          <div className="mb-4 flex gap-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary font-display text-sm text-foreground">
-              Y
+        {sub && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-4"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-primary" />
+              <span className="font-display text-sm tracking-wider text-foreground">
+                КОММЕНТАРИИ ({comments.length})
+              </span>
             </div>
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleComment()}
-                placeholder="Написать комментарий..."
-                className="w-full rounded-xl border border-border bg-card px-4 py-2.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-              />
-              <button
-                onClick={handleComment}
-                disabled={!commentText.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-primary transition-colors disabled:text-muted-foreground"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
 
-          {/* Comments list */}
-          <div className="flex flex-col gap-3">
-            <AnimatePresence>
-              {visibleComments.map((comment, i) => (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex gap-2.5"
+            {/* Comment input */}
+            <div className="mb-4 flex gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary font-display text-sm text-foreground">
+                Y
+              </div>
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleComment()}
+                  placeholder="Написать комментарий..."
+                  className="w-full rounded-xl border border-border bg-card px-4 py-2.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                />
+                <button
+                  onClick={handleComment}
+                  disabled={!commentText.trim() || commentMutation.isPending}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-primary transition-colors disabled:text-muted-foreground"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium text-foreground">
-                    {comment.user[0].toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">@{comment.user}</span>
-                      <span className="text-[10px] text-muted-foreground">{comment.time}</span>
-                    </div>
-                    <p className="mt-0.5 text-sm leading-relaxed text-secondary-foreground">{comment.text}</p>
-                    <div className="mt-1 flex items-center gap-3">
-                      <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                        <ThumbsUp className="h-3 w-3" /> {comment.likes}
-                      </button>
-                      <button className="text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                        Ответить
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                  {commentMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-          {comments.length > 3 && !showAllComments && (
-            <button
-              onClick={() => setShowAllComments(true)}
-              className="mt-3 w-full text-center text-sm font-medium text-primary hover:underline"
-            >
-              Показать все {comments.length} комментариев
-            </button>
-          )}
-        </motion.div>
+            {/* Comments list */}
+            <div className="flex flex-col gap-3">
+              <AnimatePresence>
+                {visibleComments.map((comment: any, i: number) => (
+                  <motion.div
+                    key={comment.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex gap-2.5"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium text-foreground">
+                      {(comment.user?.username ?? comment.username ?? "?")[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
+                          @{comment.user?.username ?? comment.username ?? "—"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {comment.created_at ? new Date(comment.created_at).toLocaleDateString("ru-RU") : ""}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-sm leading-relaxed text-secondary-foreground">{comment.text}</p>
+                      <div className="mt-1 flex items-center gap-3">
+                        <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                          <ThumbsUp className="h-3 w-3" /> {comment.likes ?? 0}
+                        </button>
+                        <button className="text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                          Ответить
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {comments.length > 3 && !showAllComments && (
+              <button
+                onClick={() => setShowAllComments(true)}
+                className="mt-3 w-full text-center text-sm font-medium text-primary hover:underline"
+              >
+                Показать все {comments.length} комментариев
+              </button>
+            )}
+          </motion.div>
+        )}
+
+        {/* No submissions yet */}
+        {!sub && (
+          <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <p className="text-muted-foreground">Пока нет доказательств. Будь первым!</p>
+          </div>
+        )}
       </div>
     </div>
   );
