@@ -190,6 +190,25 @@ class ApiClient {
     return this.requestFormData<any>(`/api/submit/${id}`, fd);
   }
 
+  async getDare(id: number) {
+    return this.request<any>(`/api/dares/${id}`);
+  }
+
+  async getSubmissions(dareId: number) {
+    return this.request<any[]>(`/api/dares/${dareId}/submissions`);
+  }
+
+  async getComments(submissionId: number) {
+    return this.request<any[]>(`/api/submissions/${submissionId}/comments`);
+  }
+
+  async addComment(submissionId: number, text: string) {
+    return this.request<any>(`/api/submissions/${submissionId}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }, true);
+  }
+
   // ─── Voting ────────────────────────────────────
   async vote(submissionId: number, voteType: "yes" | "no") {
     return this.request<any>(`/api/vote/${submissionId}`, {
