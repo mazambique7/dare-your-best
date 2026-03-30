@@ -1,17 +1,22 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Zap } from "lucide-react";
+import { Flame, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import DailyDare from "@/components/DailyDare";
 import DareCard from "@/components/DareCard";
+import api from "@/lib/api";
 
-const mockDares = [
-  { id: 1, title: "Заговори с незнакомцем", description: "Подойди к случайному человеку в кафе и задай необычный вопрос. Сними реакцию!", category: "Социальное", difficulty: "easy" as const, reward: 100, timeLeft: "23ч", author: "daredevil" },
-  { id: 2, title: "Ледяной душ 3 минуты", description: "Запиши полное видео ледяного душа. Без пауз и монтажа.", category: "Физическое", difficulty: "medium" as const, reward: 200, timeLeft: "47ч", author: "iceman" },
-  { id: 3, title: "Открытый микрофон", description: "Выступи со стендапом на открытом микрофоне в любом баре города.", category: "Социальное", difficulty: "hard" as const, reward: 300, timeLeft: "71ч", author: "comedian" },
-  { id: 4, title: "Пробежка 5км", description: "Пробеги 5 километров и запиши GPS-трек + видео финиша.", category: "Спорт", difficulty: "easy" as const, reward: 100, timeLeft: "23ч" },
-  { id: 5, title: "Готовь новое блюдо", description: "Приготовь блюдо кухни, которую никогда не пробовал. Покажи процесс!", category: "Творчество", difficulty: "medium" as const, reward: 200, timeLeft: "47ч", author: "chef_mode" },
-];
+const categories = ["Все", "Социальное", "Спорт", "Физическое", "Творчество", "Экстрим"];
 
 const FeedPage = () => {
+  const [activeCategory, setActiveCategory] = useState("Все");
+
+  const { data: dares = [], isLoading, error } = useQuery({
+    queryKey: ["dares", activeCategory],
+    queryFn: () =>
+      api.getDares(activeCategory === "Все" ? undefined : { category: activeCategory }),
+  });
+
   return (
     <div className="min-h-screen pb-24 pt-4">
       <div className="mx-auto max-w-md px-4">
@@ -34,11 +39,12 @@ const FeedPage = () => {
 
         {/* Category pills */}
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {["Все", "Социальное", "Спорт", "Физическое", "Творчество"].map((cat, i) => (
+          {categories.map((cat) => (
             <button
               key={cat}
+              onClick={() => setActiveCategory(cat)}
               className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                i === 0
+                activeCategory === cat
                   ? "gradient-fire text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-muted"
               }`}
@@ -49,18 +55,42 @@ const FeedPage = () => {
         </div>
 
         {/* Feed */}
-        <div className="flex flex-col gap-3">
-          {mockDares.map((dare, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-            >
-              <DareCard {...dare} />
-            </motion.div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <p className="text-muted-foreground">Не удалось загрузить вызовы</p>
+            <p className="mt-1 text-xs text-muted-foreground">{(error as Error).message}</p>
+          </div>
+        ) : dares.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <p className="text-muted-foreground">Пока нет вызовов в этой категории</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {dares.map((dare: any, i: number) => (
+              <motion.div
+                key={dare.id ?? i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <DareCard
+                  id={dare.id}
+                  title={dare.title}
+                  description={dare.description}
+                  category={dare.category}
+                  difficulty={dare.difficulty ?? "easy"}
+                  reward={dare.reward ?? (dare.difficulty === "hard" ? 300 : dare.difficulty === "medium" ? 200 : 100)}
+                  timeLeft={dare.time_left}
+                  author={dare.author?.username ?? dare.author_username}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
