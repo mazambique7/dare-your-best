@@ -1,19 +1,43 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Shield, ArrowLeft } from "lucide-react";
+import { Zap, Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { toast } from "sonner";
 
 const categories = ["Социальное", "Спорт", "Физическое", "Творчество", "Экстрим"];
 const difficulties = [
   { value: "easy", label: "Лёгкий", reward: 100, desc: "24 часа" },
   { value: "medium", label: "Средний", reward: 200, desc: "48 часов" },
-  { value: "hard", label: "Хард", reward: 300, desc: "72 часа · PRO", locked: false },
+  { value: "hard", label: "Хард", reward: 300, desc: "72 часа · PRO" },
 ];
 
 const CreateDarePage = () => {
   const navigate = useNavigate();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedDiff, setSelectedDiff] = useState("easy");
   const [selectedCat, setSelectedCat] = useState("");
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      api.createDare({
+        title,
+        description,
+        category: selectedCat,
+        difficulty: selectedDiff,
+      }),
+    onSuccess: () => {
+      toast.success("Вызов создан!");
+      navigate("/");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Ошибка при создании");
+    },
+  });
+
+  const canSubmit = title.trim() && description.trim() && selectedCat;
 
   return (
     <div className="min-h-screen pb-24 pt-4">
@@ -26,27 +50,28 @@ const CreateDarePage = () => {
         <p className="mb-6 text-sm text-muted-foreground">Брось вызов сообществу</p>
 
         <div className="flex flex-col gap-5">
-          {/* Title */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Название</label>
             <input
               type="text"
               placeholder="Что нужно сделать?"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
-          {/* Description */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Описание</label>
             <textarea
               rows={3}
               placeholder="Подробности и правила..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               className="w-full resize-none rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
-          {/* Category */}
           <div>
             <label className="mb-2 block text-sm font-medium text-foreground">Категория</label>
             <div className="flex flex-wrap gap-2">
@@ -66,7 +91,6 @@ const CreateDarePage = () => {
             </div>
           </div>
 
-          {/* Difficulty */}
           <div>
             <label className="mb-2 block text-sm font-medium text-foreground">Сложность</label>
             <div className="flex flex-col gap-2">
@@ -95,11 +119,13 @@ const CreateDarePage = () => {
             </div>
           </div>
 
-          {/* Submit */}
           <motion.button
             whileTap={{ scale: 0.97 }}
-            className="gradient-fire w-full rounded-xl py-3.5 font-display text-lg tracking-wider text-primary-foreground shadow-glow transition-transform hover:scale-[1.02]"
+            onClick={() => createMutation.mutate()}
+            disabled={!canSubmit || createMutation.isPending}
+            className="gradient-fire w-full rounded-xl py-3.5 font-display text-lg tracking-wider text-primary-foreground shadow-glow transition-transform hover:scale-[1.02] disabled:opacity-50 flex items-center justify-center gap-2"
           >
+            {createMutation.isPending && <Loader2 className="h-5 w-5 animate-spin" />}
             СОЗДАТЬ ВЫЗОВ
           </motion.button>
         </div>

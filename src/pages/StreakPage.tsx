@@ -1,10 +1,28 @@
 import { motion } from "framer-motion";
-import { Flame, Calendar, TrendingUp, Zap } from "lucide-react";
+import { Flame, Calendar, TrendingUp, Zap, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const StreakPage = () => {
-  const streak = 7;
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const streak = user?.streak ?? 0;
   const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-  const completed = [true, true, true, true, true, true, true];
+
+  // Calculate which days of current week are completed based on streak
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const mondayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const completed = days.map((_, i) => i <= mondayIndex && i >= mondayIndex - Math.min(streak - 1, mondayIndex));
+
+  const streakMultiplier = streak >= 30 ? "×3.0" : streak >= 14 ? "×2.0" : streak >= 7 ? "×1.5" : "×1.0";
 
   return (
     <div className="min-h-screen pb-24 pt-4">
@@ -62,8 +80,8 @@ const StreakPage = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: TrendingUp, label: "Лучший стрик", value: "23 дня", color: "text-streak" },
-            { icon: Zap, label: "Бонус за стрик", value: "×1.5", color: "text-primary" },
+            { icon: TrendingUp, label: "Текущий стрик", value: `${streak} ${streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}`, color: "text-streak" },
+            { icon: Zap, label: "Бонус за стрик", value: streakMultiplier, color: "text-primary" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
