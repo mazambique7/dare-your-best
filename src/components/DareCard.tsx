@@ -1,6 +1,10 @@
 import { motion } from "framer-motion";
-import { Flame, Clock, Zap, Shield, ChevronRight } from "lucide-react";
+import { Flame, Clock, Zap, Shield, ChevronRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface DareCardProps {
   id?: number;
@@ -22,6 +26,24 @@ const difficultyConfig = {
 const DareCard = ({ id, title, description, category, difficulty, reward, timeLeft, author }: DareCardProps) => {
   const diff = difficultyConfig[difficulty];
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [accepting, setAccepting] = useState(false);
+
+  const handleAccept = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!id || accepting) return;
+    setAccepting(true);
+    try {
+      await api.acceptDare(id);
+      toast.success("Вызов принят!");
+      queryClient.invalidateQueries({ queryKey: ["dares"] });
+      navigate(`/dare/${id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Не удалось принять вызов");
+    } finally {
+      setAccepting(false);
+    }
+  };
 
   return (
     <motion.div
@@ -55,8 +77,12 @@ const DareCard = ({ id, title, description, category, difficulty, reward, timeLe
             </span>
           )}
         </div>
-        <button className="gradient-fire flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105 active:scale-95">
-          Принять <ChevronRight className="h-4 w-4" />
+        <button
+          onClick={handleAccept}
+          disabled={accepting}
+          className="gradient-fire flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
+        >
+          {accepting ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Принять <ChevronRight className="h-4 w-4" /></>}
         </button>
       </div>
 

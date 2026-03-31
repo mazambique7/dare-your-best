@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Flame, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import DailyDare from "@/components/DailyDare";
 import DareCard from "@/components/DareCard";
 import api from "@/lib/api";
@@ -10,6 +11,7 @@ const categories = ["Все", "Социальное", "Спорт", "Физич�
 
 const FeedPage = () => {
   const [activeCategory, setActiveCategory] = useState("Все");
+  const { user } = useAuth();
 
   const { data: dares = [], isLoading, error } = useQuery({
     queryKey: ["dares", activeCategory],
@@ -28,7 +30,7 @@ const FeedPage = () => {
           </div>
           <div className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5">
             <Flame className="h-4 w-4 text-streak" />
-            <span className="font-display text-lg text-streak">7</span>
+            <span className="font-display text-lg text-streak">{user?.streak ?? 0}</span>
           </div>
         </div>
 
