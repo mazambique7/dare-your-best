@@ -161,10 +161,12 @@ class ApiClient {
     return this.request<{ dare: any; remaining_secs: number }>("/api/daily");
   }
 
-  async getDares(params?: { category?: string; difficulty?: string }) {
+  async getDares(params?: { category?: string; difficulty?: string; offset?: number; limit?: number }) {
     const qs = new URLSearchParams();
     if (params?.category) qs.set("category", params.category);
     if (params?.difficulty) qs.set("difficulty", params.difficulty);
+    if (params?.offset != null) qs.set("offset", String(params.offset));
+    if (params?.limit != null) qs.set("limit", String(params.limit));
     const q = qs.toString();
     return this.request<any[]>(`/api/dares${q ? `?${q}` : ""}`);
   }
