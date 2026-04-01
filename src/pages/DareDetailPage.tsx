@@ -420,12 +420,99 @@ const DareDetailPage = () => {
           </motion.div>
         )}
 
-        {/* No submissions yet */}
-        {!sub && (
-          <div className="rounded-xl border border-border bg-card p-6 text-center">
-            <p className="text-muted-foreground">Пока нет доказательств. Будь первым!</p>
-          </div>
-        )}
+        {/* Upload section — show when user can submit */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mb-4 rounded-xl border border-border bg-card p-4"
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            capture="environment"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          {!selectedFile ? (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border py-8 transition-colors hover:border-primary/50 hover:bg-primary/5"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <Video className="h-7 w-7 text-primary" />
+              </div>
+              <div className="text-center">
+                <p className="font-display text-sm tracking-wider text-foreground">
+                  {sub ? "ЗАГРУЗИТЬ ЕЩЁ" : "ЗАГРУЗИТЬ ДОКАЗАТЕЛЬСТВО"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Видео до 100 МБ · mp4, mov, webm
+                </p>
+              </div>
+            </button>
+          ) : (
+            <div className="space-y-3">
+              {/* Preview */}
+              <div className="relative overflow-hidden rounded-lg">
+                <video
+                  src={previewUrl!}
+                  className="h-48 w-full rounded-lg object-cover"
+                  playsInline
+                  muted
+                  autoPlay
+                  loop
+                />
+                <button
+                  onClick={clearSelection}
+                  disabled={submitMutation.isPending}
+                  className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm transition-colors hover:bg-background"
+                >
+                  <X className="h-4 w-4 text-foreground" />
+                </button>
+                <div className="absolute bottom-2 left-2 rounded-lg bg-background/80 px-2 py-1 backdrop-blur-sm">
+                  <span className="text-xs text-foreground">
+                    {(selectedFile.size / (1024 * 1024)).toFixed(1)} МБ
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              {submitMutation.isPending && (
+                <div className="space-y-1">
+                  <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                    <motion.div
+                      className="h-full rounded-full gradient-fire"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${uploadProgress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <p className="text-center text-xs text-muted-foreground">Загружаю... {uploadProgress}%</p>
+                </div>
+              )}
+
+              {/* Upload button */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleUpload}
+                disabled={submitMutation.isPending}
+                className="flex w-full items-center justify-center gap-2 gradient-fire rounded-xl py-3 font-display text-sm tracking-wider text-primary-foreground shadow-glow transition-transform hover:scale-[1.02] disabled:opacity-60"
+              >
+                {submitMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="h-5 w-5" />
+                    ОТПРАВИТЬ НА ПРОВЕРКУ
+                  </>
+                )}
+              </motion.button>
+            </div>
+          )}
+        </motion.div>
       </div>
     </div>
   );
