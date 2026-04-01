@@ -17,8 +17,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     try {
-      await api.logout();
-      logout();
+      await logout();
       navigate("/auth");
     } catch {
       toast.error("Не удалось выйти");

@@ -67,8 +67,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (data: Parameters<typeof api.register>[0]) => {
     const res = await api.register(data);
-    // Auto-login after register
-    await api.login({ username: data.username, password: data.password });
+    // Save tokens from register response
+    localStorage.setItem("dareloop_access_token", res.access_token);
+    localStorage.setItem("dareloop_refresh_token", res.refresh_token);
     setUser(res.user);
   };
 
