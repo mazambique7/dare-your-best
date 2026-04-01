@@ -23,10 +23,17 @@ const DareDetailPage = () => {
   const dareId = Number(id);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [userVote, setUserVote] = useState<"yes" | "no" | null>(null);
   const [commentText, setCommentText] = useState("");
   const [showAllComments, setShowAllComments] = useState(false);
+
+  // Upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // ─── Queries ───────────────────────────────────
   const { data: dare, isLoading: dareLoading, error: dareError } = useQuery({
