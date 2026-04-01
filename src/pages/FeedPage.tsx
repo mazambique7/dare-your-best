@@ -1,26 +1,93 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Flame, Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Flame, Loader2, RefreshCw } from "lucide-react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import DailyDare from "@/components/DailyDare";
 import DareCard from "@/components/DareCard";
 import api from "@/lib/api";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 const categories = ["Все", "Социальное", "Спорт", "Физическое", "Творчество", "Экстрим"];
+const PAGE_SIZE = 10;
 
 const FeedPage = () => {
   const [activeCategory, setActiveCategory] = useState("Все");
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const { data: dares = [], isLoading, error } = useQuery({
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
     queryKey: ["dares", activeCategory],
-    queryFn: () =>
-      api.getDares(activeCategory === "Все" ? undefined : { category: activeCategory }),
+    queryFn: ({ pageParam = 0 }) =>
+      api.getDares({
+        ...(activeCategory !== "Все" ? { category: activeCategory } : {}),
+        offset: pageParam,
+        limit: PAGE_SIZE,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.flat().length;
+    },
+    initialPageParam: 0,
   });
 
+  const dares = data?.pages.flat() ?? [];
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Pull to refresh
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["dares", activeCategory] });
+    await queryClient.invalidateQueries({ queryKey: ["daily-dare"] });
+    await refetch();
+  }, [queryClient, activeCategory, refetch]);
+
+  const { pullDistance, isRefreshing, onTouchStart, onTouchMove, onTouchEnd } =
+    usePullToRefresh({ onRefresh: handleRefresh });
+
   return (
-    <div className="min-h-screen pb-24 pt-4">
+    <div
+      className="min-h-screen pb-24 pt-4"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Pull indicator */}
+      <div
+        className="flex items-center justify-center overflow-hidden transition-all duration-200"
+        style={{ height: pullDistance > 0 ? pullDistance : 0 }}
+      >
+        <motion.div
+          animate={{ rotate: isRefreshing ? 360 : (pullDistance / 80) * 360 }}
+          transition={isRefreshing ? { repeat: Infinity, duration: 0.8, ease: "linear" } : { duration: 0 }}
+        >
+          <RefreshCw className={`h-6 w-6 ${pullDistance >= 80 || isRefreshing ? "text-primary" : "text-muted-foreground"}`} />
+        </motion.div>
+      </div>
+
       <div className="mx-auto max-w-md px-4">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -77,7 +144,7 @@ const FeedPage = () => {
                 key={dare.id ?? i}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: Math.min(i * 0.05, 0.5) }}
               >
                 <DareCard
                   id={dare.id}
@@ -91,6 +158,18 @@ const FeedPage = () => {
                 />
               </motion.div>
             ))}
+
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="py-4">
+              {isFetchingNextPage && (
+                <div className="flex justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              )}
+              {!hasNextPage && dares.length > 0 && (
+                <p className="text-center text-xs text-muted-foreground">Вы просмотрели все вызовы 🔥</p>
+              )}
+            </div>
           </div>
         )}
       </div>
