@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ThumbsUp, ThumbsDown, Zap, Shield,
-  Play, Share2, MessageCircle, Send, MoreVertical, Loader2
+  Play, Share2, MessageCircle, Send, MoreVertical, Loader2,
+  Upload, Video, X, CheckCircle2
 } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const difficultyConfig = {
   easy: { label: "Лёгкий", color: "text-success", bg: "bg-success/10" },
