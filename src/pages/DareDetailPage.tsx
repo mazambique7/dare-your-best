@@ -80,6 +80,59 @@ const DareDetailPage = () => {
     },
   });
 
+  // Submit video mutation
+  const submitMutation = useMutation({
+    mutationFn: (file: File) => api.submitDare(dareId, file),
+    onSuccess: () => {
+      toast({ title: "Доказательство загружено!", description: "Ожидай голосования сообщества" });
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setUploadProgress(0);
+      queryClient.invalidateQueries({ queryKey: ["submissions", dareId] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Ошибка загрузки", description: err.message, variant: "destructive" });
+      setUploadProgress(0);
+    },
+  });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate: video only, max 100MB
+    if (!file.type.startsWith("video/")) {
+      toast({ title: "Только видео", description: "Загрузи видео-файл (mp4, mov, webm)", variant: "destructive" });
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      toast({ title: "Файл слишком большой", description: "Максимум 100 МБ", variant: "destructive" });
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleUpload = () => {
+    if (!selectedFile) return;
+    setUploadProgress(10);
+    // Simulate progress while uploading
+    const interval = setInterval(() => {
+      setUploadProgress((p) => Math.min(p + 8, 90));
+    }, 300);
+    submitMutation.mutate(selectedFile, {
+      onSettled: () => clearInterval(interval),
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleVote = (type: "yes" | "no") => {
     if (!sub) return;
     if (userVote === type) {
