@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ThumbsUp, ThumbsDown, Zap, Shield,
   Play, Share2, MessageCircle, Send, MoreVertical, Loader2,
-  Upload, Video, X, CheckCircle2
+  Upload, Video, X, CheckCircle2, Camera, Image
 } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -96,13 +96,15 @@ const DareDetailPage = () => {
     },
   });
 
+  const isVideo = (file: File) => file.type.startsWith("video/");
+  const isImage = (file: File) => file.type.startsWith("image/");
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate: video only, max 100MB
-    if (!file.type.startsWith("video/")) {
-      toast({ title: "Только видео", description: "Загрузи видео-файл (mp4, mov, webm)", variant: "destructive" });
+    if (!isVideo(file) && !isImage(file)) {
+      toast({ title: "Неподдерживаемый формат", description: "Загрузи фото или видео (mp4, mov, webm, jpg, png)", variant: "destructive" });
       return;
     }
     if (file.size > 100 * 1024 * 1024) {
@@ -430,7 +432,7 @@ const DareDetailPage = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*"
+            accept="video/*,image/*"
             capture="environment"
             onChange={handleFileSelect}
             className="hidden"
@@ -442,14 +444,14 @@ const DareDetailPage = () => {
               className="flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border py-8 transition-colors hover:border-primary/50 hover:bg-primary/5"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Video className="h-7 w-7 text-primary" />
+                <Camera className="h-7 w-7 text-primary" />
               </div>
               <div className="text-center">
                 <p className="font-display text-sm tracking-wider text-foreground">
                   {sub ? "ЗАГРУЗИТЬ ЕЩЁ" : "ЗАГРУЗИТЬ ДОКАЗАТЕЛЬСТВО"}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Видео до 100 МБ · mp4, mov, webm
+                  Фото или видео до 100 МБ
                 </p>
               </div>
             </button>
@@ -457,14 +459,22 @@ const DareDetailPage = () => {
             <div className="space-y-3">
               {/* Preview */}
               <div className="relative overflow-hidden rounded-lg">
-                <video
-                  src={previewUrl!}
-                  className="h-48 w-full rounded-lg object-cover"
-                  playsInline
-                  muted
-                  autoPlay
-                  loop
-                />
+                {selectedFile && isVideo(selectedFile) ? (
+                  <video
+                    src={previewUrl!}
+                    className="h-48 w-full rounded-lg object-cover"
+                    playsInline
+                    muted
+                    autoPlay
+                    loop
+                  />
+                ) : (
+                  <img
+                    src={previewUrl!}
+                    alt="Превью"
+                    className="h-48 w-full rounded-lg object-cover"
+                  />
+                )}
                 <button
                   onClick={clearSelection}
                   disabled={submitMutation.isPending}
