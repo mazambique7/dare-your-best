@@ -432,7 +432,7 @@ const DareDetailPage = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*"
+            accept="video/*,image/*"
             capture="environment"
             onChange={handleFileSelect}
             className="hidden"
