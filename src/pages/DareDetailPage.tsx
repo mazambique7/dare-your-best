@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ThumbsUp, ThumbsDown, Zap, Shield,
   Play, Share2, MessageCircle, Send, MoreVertical, Loader2,
-  Upload, Video, X, CheckCircle2
+  Upload, Video, X, CheckCircle2, Camera, Image
 } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
