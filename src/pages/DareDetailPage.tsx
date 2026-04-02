@@ -459,14 +459,22 @@ const DareDetailPage = () => {
             <div className="space-y-3">
               {/* Preview */}
               <div className="relative overflow-hidden rounded-lg">
-                <video
-                  src={previewUrl!}
-                  className="h-48 w-full rounded-lg object-cover"
-                  playsInline
-                  muted
-                  autoPlay
-                  loop
-                />
+                {selectedFile && isVideo(selectedFile) ? (
+                  <video
+                    src={previewUrl!}
+                    className="h-48 w-full rounded-lg object-cover"
+                    playsInline
+                    muted
+                    autoPlay
+                    loop
+                  />
+                ) : (
+                  <img
+                    src={previewUrl!}
+                    alt="Превью"
+                    className="h-48 w-full rounded-lg object-cover"
+                  />
+                )}
                 <button
                   onClick={clearSelection}
                   disabled={submitMutation.isPending}
