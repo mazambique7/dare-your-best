@@ -131,7 +131,9 @@ const ProfilePage = () => {
           </motion.div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <NotificationToggle />
+
+        <div className="mt-2 flex flex-col gap-2">
           {[
             { label: "Активные вызовы", value: `${user.active_dares ?? 0}/3` },
             { label: "Мои вызовы", value: "" },
