@@ -444,14 +444,14 @@ const DareDetailPage = () => {
               className="flex w-full flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border py-8 transition-colors hover:border-primary/50 hover:bg-primary/5"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Video className="h-7 w-7 text-primary" />
+                <Camera className="h-7 w-7 text-primary" />
               </div>
               <div className="text-center">
                 <p className="font-display text-sm tracking-wider text-foreground">
                   {sub ? "ЗАГРУЗИТЬ ЕЩЁ" : "ЗАГРУЗИТЬ ДОКАЗАТЕЛЬСТВО"}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Видео до 100 МБ · mp4, mov, webm
+                  Фото или видео до 100 МБ
                 </p>
               </div>
             </button>
