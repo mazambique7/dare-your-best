@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { Flame, Zap, Trophy, Settings, ChevronRight, Crown, LogOut, Loader2 } from "lucide-react";
+import { Flame, Zap, Trophy, Settings, ChevronRight, Crown, LogOut, Loader2, Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import NotificationToggle from "@/components/NotificationToggle";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -130,7 +131,9 @@ const ProfilePage = () => {
           </motion.div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <NotificationToggle />
+
+        <div className="mt-2 flex flex-col gap-2">
           {[
             { label: "Активные вызовы", value: `${user.active_dares ?? 0}/3` },
             { label: "Мои вызовы", value: "" },

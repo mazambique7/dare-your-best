@@ -253,6 +253,21 @@ class ApiClient {
     return this.request<any>(`/api/admin/reset-votes/${submissionId}`, { method: "POST" }, true);
   }
 
+  // ─── Push Notifications ───────────────────────
+  async savePushSubscription(subscription: any) {
+    return this.request<any>("/api/push/subscribe", {
+      method: "POST",
+      body: JSON.stringify(subscription),
+    }, true);
+  }
+
+  async deletePushSubscription(endpoint: string) {
+    return this.request<any>("/api/push/unsubscribe", {
+      method: "POST",
+      body: JSON.stringify({ endpoint }),
+    }, true);
+  }
+
   // ─── Helpers ───────────────────────────────────
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
