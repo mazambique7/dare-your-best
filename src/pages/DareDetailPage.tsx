@@ -96,13 +96,15 @@ const DareDetailPage = () => {
     },
   });
 
+  const isVideo = (file: File) => file.type.startsWith("video/");
+  const isImage = (file: File) => file.type.startsWith("image/");
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate: video only, max 100MB
-    if (!file.type.startsWith("video/")) {
-      toast({ title: "Только видео", description: "Загрузи видео-файл (mp4, mov, webm)", variant: "destructive" });
+    if (!isVideo(file) && !isImage(file)) {
+      toast({ title: "Неподдерживаемый формат", description: "Загрузи фото или видео (mp4, mov, webm, jpg, png)", variant: "destructive" });
       return;
     }
     if (file.size > 100 * 1024 * 1024) {
