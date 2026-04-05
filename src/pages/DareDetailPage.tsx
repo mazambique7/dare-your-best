@@ -26,6 +26,20 @@ const DareDetailPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // WebSocket for live updates
+  const handleWsEvent = useCallback((event: WSEvent) => {
+    if (event.type === "vote") {
+      queryClient.invalidateQueries({ queryKey: ["submissions", dareId] });
+    } else if (event.type === "comment") {
+      queryClient.invalidateQueries({ queryKey: ["comments"] });
+    } else if (event.type === "dare_status") {
+      queryClient.invalidateQueries({ queryKey: ["dare", dareId] });
+      queryClient.invalidateQueries({ queryKey: ["submissions", dareId] });
+    }
+  }, [dareId, queryClient]);
+
+  useWebSocket(dareId || null, handleWsEvent);
+
   const [userVote, setUserVote] = useState<"yes" | "no" | null>(null);
   const [commentText, setCommentText] = useState("");
   const [showAllComments, setShowAllComments] = useState(false);
