@@ -1,7 +1,8 @@
-import { motion } from "framer-motion";
-import { Flame, Zap, Trophy, Settings, ChevronRight, Crown, LogOut, Loader2, Bell } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Flame, Zap, Trophy, Settings, ChevronRight, Crown, LogOut, Loader2, Users, Gift, Share2, Copy, CheckCircle2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import { toast } from "sonner";
