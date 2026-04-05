@@ -19,6 +19,12 @@ const ProfilePage = () => {
     queryFn: () => api.getMe(),
   });
 
+  const { data: refStats } = useQuery({
+    queryKey: ["my-referrals"],
+    queryFn: () => api.getMyReferrals(),
+    enabled: !!user,
+  });
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -30,8 +36,26 @@ const ProfilePage = () => {
 
   const handleCopyRef = () => {
     if (user?.ref_code) {
-      navigator.clipboard.writeText(user.ref_code);
-      toast.success("Код скопирован!");
+      navigator.clipboard.writeText(`https://dareloop.ru/join?ref=${user.ref_code}`);
+      setCopied(true);
+      toast.success("Ссылка скопирована!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!user?.ref_code) return;
+    const shareData = {
+      title: "DareLoop — вызовы для смелых",
+      text: `Присоединяйся к DareLoop! Используй мой реферальный код: ${user.ref_code}`,
+      url: `https://dareloop.ru/join?ref=${user.ref_code}`,
+    };
+    try {
+      await navigator.share(shareData);
+    } catch {
+      handleCopyRef();
+    }
+  };
     }
   };
 
