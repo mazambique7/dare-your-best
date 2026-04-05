@@ -268,6 +268,24 @@ class ApiClient {
     }, true);
   }
 
+  // ─── Referrals ─────────────────────────────────
+  async getMyReferrals() {
+    return this.request<{
+      total_referrals: number;
+      total_earned: number;
+      ref_code: string;
+      share_url: string;
+      referrals: Array<{
+        id: number;
+        username: string;
+        avatar: string;
+        points: number;
+        joined_at: string;
+        bonus_paid: boolean;
+      }>;
+    }>("/api/me/referrals", {}, true);
+  }
+
   // ─── Helpers ───────────────────────────────────
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
