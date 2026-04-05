@@ -56,8 +56,6 @@ const ProfilePage = () => {
       handleCopyRef();
     }
   };
-    }
-  };
 
   if (isLoading) {
     return (
