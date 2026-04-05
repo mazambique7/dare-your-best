@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket, WSEvent } from "@/hooks/use-websocket";
 import { useAuth } from "@/contexts/AuthContext";
 
 const difficultyConfig = {
@@ -24,6 +25,20 @@ const DareDetailPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // WebSocket for live updates
+  const handleWsEvent = useCallback((event: WSEvent) => {
+    if (event.type === "vote") {
+      queryClient.invalidateQueries({ queryKey: ["submissions", dareId] });
+    } else if (event.type === "comment") {
+      queryClient.invalidateQueries({ queryKey: ["comments"] });
+    } else if (event.type === "dare_status") {
+      queryClient.invalidateQueries({ queryKey: ["dare", dareId] });
+      queryClient.invalidateQueries({ queryKey: ["submissions", dareId] });
+    }
+  }, [dareId, queryClient]);
+
+  useWebSocket(dareId || null, handleWsEvent);
 
   const [userVote, setUserVote] = useState<"yes" | "no" | null>(null);
   const [commentText, setCommentText] = useState("");
