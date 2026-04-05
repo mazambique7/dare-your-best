@@ -11,6 +11,8 @@ import NotificationToggle from "@/components/NotificationToggle";
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const [copied, setCopied] = useState(false);
+  const [showReferrals, setShowReferrals] = useState(false);
 
   const { data: user, isLoading, error } = useQuery({
     queryKey: ["me"],
