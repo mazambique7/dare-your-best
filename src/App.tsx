@@ -10,6 +10,7 @@ import FeedPage from "./pages/FeedPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import StreakPage from "./pages/StreakPage";
+import AchievementsPage from "./pages/AchievementsPage";
 import CreateDarePage from "./pages/CreateDarePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -35,6 +36,7 @@ const AppLayout = () => {
           <Route path="/profile" element={<OnboardingGuard><PageTransition><ProfilePage /></PageTransition></OnboardingGuard>} />
           <Route path="/streak" element={<OnboardingGuard><PageTransition><StreakPage /></PageTransition></OnboardingGuard>} />
           <Route path="/create" element={<OnboardingGuard><PageTransition><CreateDarePage /></PageTransition></OnboardingGuard>} />
+          <Route path="/achievements" element={<OnboardingGuard><PageTransition><AchievementsPage /></PageTransition></OnboardingGuard>} />
           <Route path="/dare/:id" element={<OnboardingGuard><PageTransition><DareDetailPage /></PageTransition></OnboardingGuard>} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
