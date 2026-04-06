@@ -304,6 +304,30 @@ class ApiClient {
     }>("/api/me/achievements", {}, true);
   }
 
+  // ─── History ────────────────────────────────────
+  async getMyHistory(params?: { status?: string; offset?: number; limit?: number }) {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.offset != null) qs.set("offset", String(params.offset));
+    if (params?.limit != null) qs.set("limit", String(params.limit));
+    const q = qs.toString();
+    return this.request<{
+      history: Array<{
+        dare_id: number;
+        dare_title: string;
+        category: string;
+        difficulty: string;
+        status: string;
+        points: number;
+        submitted_at: string;
+        media_url: string;
+        votes_yes: number;
+        votes_no: number;
+      }>;
+      total: number;
+    }>(`/api/me/history${q ? `?${q}` : ""}`, {}, true);
+  }
+
   // ─── Helpers ───────────────────────────────────
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
