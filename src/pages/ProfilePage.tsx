@@ -138,6 +138,24 @@ const ProfilePage = () => {
           ))}
         </div>
 
+        {/* Achievements link */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          onClick={() => navigate("/achievements")}
+          className="mb-6 flex w-full items-center justify-between rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/30"
+        >
+          <div className="flex items-center gap-3">
+            <Award className="h-5 w-5 text-primary" />
+            <div>
+              <span className="font-display text-sm tracking-wider text-foreground">ДОСТИЖЕНИЯ</span>
+              <p className="text-[10px] text-muted-foreground">Открывай бейджи за вызовы и стрик</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </motion.button>
+
         {user.ref_code && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
