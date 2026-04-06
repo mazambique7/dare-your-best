@@ -286,6 +286,24 @@ class ApiClient {
     }>("/api/me/referrals", {}, true);
   }
 
+  // ─── Achievements ──────────────────────────────
+  async getAchievements() {
+    return this.request<{
+      badges: Array<{
+        id: string;
+        title: string;
+        description: string;
+        icon: string;
+        category: "dares" | "streak" | "social";
+        threshold: number;
+        unlocked: boolean;
+        progress: number;
+      }>;
+      total: number;
+      unlocked: number;
+    }>("/api/me/achievements", {}, true);
+  }
+
   // ─── Helpers ───────────────────────────────────
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
