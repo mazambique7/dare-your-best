@@ -328,6 +328,16 @@ class ApiClient {
     }>(`/api/me/history${q ? `?${q}` : ""}`, {}, true);
   }
 
+  // ─── VAPID ─────────────────────────────────────
+  async getVAPIDPublicKey(): Promise<string | null> {
+    try {
+      const data = await this.request<{ public_key: string }>("/api/vapid-public-key");
+      return data.public_key;
+    } catch {
+      return null;
+    }
+  }
+
   // ─── Helpers ───────────────────────────────────
   isAuthenticated(): boolean {
     return !!this.getAccessToken();

@@ -83,7 +83,7 @@ const ProfilePage = () => {
       <div className="mx-auto max-w-md px-4">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="font-display text-3xl tracking-wide text-foreground">Профиль</h1>
-          <button className="rounded-lg bg-secondary p-2 text-muted-foreground transition-colors hover:text-foreground">
+          <button onClick={() => navigate("/profile/edit")} className="rounded-lg bg-secondary p-2 text-muted-foreground transition-colors hover:text-foreground">
             <Settings className="h-5 w-5" />
           </button>
         </div>
@@ -255,10 +255,11 @@ const ProfilePage = () => {
         <div className="mt-2 flex flex-col gap-2">
           {[
             { label: "Активные вызовы", value: `${user.active_dares ?? 0}/3` },
-            { label: "Мои вызовы", value: "" },
+            { label: "Мои вызовы", value: "", path: "/history" },
           ].map((item) => (
             <button
               key={item.label}
+              onClick={() => item.path && navigate(item.path)}
               className="flex items-center justify-between rounded-xl border border-border bg-card p-4 text-left text-foreground transition-colors hover:bg-secondary"
             >
               <span className="text-sm font-medium">{item.label}</span>

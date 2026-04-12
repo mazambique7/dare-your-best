@@ -15,6 +15,8 @@ import CreateDarePage from "./pages/CreateDarePage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import DareDetailPage from "./pages/DareDetailPage";
+import HistoryPage from "./pages/HistoryPage";
+import EditProfilePage from "./pages/EditProfilePage";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
 
@@ -34,9 +36,11 @@ const AppLayout = () => {
           <Route path="/" element={<OnboardingGuard><PageTransition><FeedPage /></PageTransition></OnboardingGuard>} />
           <Route path="/leaderboard" element={<OnboardingGuard><PageTransition><LeaderboardPage /></PageTransition></OnboardingGuard>} />
           <Route path="/profile" element={<OnboardingGuard><PageTransition><ProfilePage /></PageTransition></OnboardingGuard>} />
+          <Route path="/profile/edit" element={<OnboardingGuard><PageTransition><EditProfilePage /></PageTransition></OnboardingGuard>} />
           <Route path="/streak" element={<OnboardingGuard><PageTransition><StreakPage /></PageTransition></OnboardingGuard>} />
           <Route path="/create" element={<OnboardingGuard><PageTransition><CreateDarePage /></PageTransition></OnboardingGuard>} />
           <Route path="/achievements" element={<OnboardingGuard><PageTransition><AchievementsPage /></PageTransition></OnboardingGuard>} />
+          <Route path="/history" element={<OnboardingGuard><PageTransition><HistoryPage /></PageTransition></OnboardingGuard>} />
           <Route path="/dare/:id" element={<OnboardingGuard><PageTransition><DareDetailPage /></PageTransition></OnboardingGuard>} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>

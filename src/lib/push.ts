@@ -1,7 +1,5 @@
 import api from "./api";
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
-
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -14,7 +12,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export function isPushSupported(): boolean {
-  return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  return (
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
 }
 
 export async function getPermissionState(): Promise<NotificationPermission> {
@@ -24,18 +26,14 @@ export async function getPermissionState(): Promise<NotificationPermission> {
 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!("serviceWorker" in navigator)) return null;
-
-  // Don't register in iframe/preview
   try {
     if (window.self !== window.top) return null;
   } catch {
     return null;
   }
   if (window.location.hostname.includes("lovableproject.com")) return null;
-
   try {
-    const registration = await navigator.serviceWorker.register("/sw.js");
-    return registration;
+    return await navigator.serviceWorker.register("/sw.js");
   } catch (err) {
     console.error("SW registration failed:", err);
     return null;
@@ -43,8 +41,10 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 }
 
 export async function subscribeToPush(): Promise<PushSubscription | null> {
-  if (!VAPID_PUBLIC_KEY) {
-    console.warn("VAPID_PUBLIC_KEY not set");
+  // Получаем VAPID ключ с нашего сервера — не нужен .env на фронте
+  const vapidPublicKey = await api.getVAPIDPublicKey();
+  if (!vapidPublicKey) {
+    console.warn("VAPID public key not available");
     return null;
   }
 
@@ -56,17 +56,13 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
 
   try {
     let subscription = await registration.pushManager.getSubscription();
-
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
     }
-
-    // Send subscription to backend
     await api.savePushSubscription(subscription.toJSON());
-
     return subscription;
   } catch (err) {
     console.error("Push subscription failed:", err);
@@ -77,11 +73,9 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
 export async function unsubscribeFromPush(): Promise<void> {
   const registration = await navigator.serviceWorker?.getRegistration();
   if (!registration) return;
-
   const subscription = await registration.pushManager.getSubscription();
   if (subscription) {
     await subscription.unsubscribe();
-    // Notify backend
     try {
       await api.deletePushSubscription(subscription.endpoint);
     } catch {
